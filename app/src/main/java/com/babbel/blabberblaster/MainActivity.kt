@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity() {
         send.setOnClickListener {
             editText?.text?.let {
                 if (it.isNotEmpty()) {
-                    viewModel.messageHistoryAdapter?.addMessage(Message(it.toString(), false))
+                    sendMessage(it.toString())
                     it.clear()
                 }
             }
@@ -59,7 +59,13 @@ class MainActivity : AppCompatActivity() {
 
         if (resultCode == RESULT_OK && data != null && requestCode == 42) {
             val results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            viewModel.messageHistoryAdapter?.addMessage(Message(results[0], false))
+            sendMessage(results[0])
         }
     }
+
+    private fun sendMessage(content: String) {
+        viewModel.messageHistoryAdapter?.addMessage(Message(content, false))
+        viewModel.sendMessage(content)
+    }
 }
+
