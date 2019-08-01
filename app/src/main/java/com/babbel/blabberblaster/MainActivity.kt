@@ -10,6 +10,8 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -58,6 +60,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        setSupportActionBar(findViewById(R.id.my_toolbar))
 
         viewModel = ViewModelProviders.of(this)[ViewModel::class.java]
 
@@ -95,6 +98,27 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem) = when(item.itemId) {
+        R.id.action_refresh -> {
+            viewModel.messageHistoryAdapter?.clear()
+            viewModel.getGreeting()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onMessageReceived(it.text)
+                }, {
+                    Toast.makeText(this, "An error occured", Toast.LENGTH_LONG).show()
+                })
+            true
+        }
+        else -> super.onOptionsItemSelected(item)
     }
 
     @SuppressLint("CheckResult")

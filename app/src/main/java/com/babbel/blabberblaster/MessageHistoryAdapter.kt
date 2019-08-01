@@ -38,6 +38,11 @@ class MessageHistoryAdapter : RecyclerView.Adapter<MessageHistoryAdapter.Message
         notifyItemInserted(messageHistory.lastIndex)
     }
 
+    fun clear() {
+        messageHistory.clear()
+        notifyDataSetChanged()
+    }
+
     class MessageViewHolder(private val linearLayout: LinearLayout) : RecyclerView.ViewHolder(linearLayout) {
 
         fun setText(text: String) {
