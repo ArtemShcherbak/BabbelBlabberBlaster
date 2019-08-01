@@ -1,7 +1,9 @@
 package com.babbel.blabberblaster
 
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
@@ -12,16 +14,22 @@ class MessageHistoryAdapter : RecyclerView.Adapter<MessageHistoryAdapter.Message
     private val messageHistory = mutableListOf<Message>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
-        val cardView = LayoutInflater.from(parent.context).inflate(R.layout.message, parent, false) as CardView
-        return MessageViewHolder(cardView)
+        val linearLayout = LayoutInflater.from(parent.context).inflate(R.layout.message, parent, false) as LinearLayout
+        return MessageViewHolder(linearLayout)
     }
 
     override fun getItemCount() = messageHistory.size
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
-        holder.cardView.setBackgroundResource(R.drawable.message_card_background)
-        holder.setText(messageHistory[position].msg)
-
+        with(messageHistory[position]) {
+            if (isIncoming) {
+                holder.setCardBackground(R.drawable.message_card_background_incoming)
+            } else {
+                holder.setCardBackground(R.drawable.message_card_background_outcoming)
+                holder.alignToTheEnd()
+            }
+            holder.setText(msg)
+        }
     }
 
     fun addMessage(msg: Message) {
@@ -29,10 +37,18 @@ class MessageHistoryAdapter : RecyclerView.Adapter<MessageHistoryAdapter.Message
         notifyItemInserted(messageHistory.lastIndex)
     }
 
-    class MessageViewHolder(val cardView: CardView) : RecyclerView.ViewHolder(cardView) {
+    class MessageViewHolder(private val linearLayout: LinearLayout) : RecyclerView.ViewHolder(linearLayout) {
 
         fun setText(text: String) {
-            cardView.findViewById<TextView>(R.id.cardview_text).text = text
+            linearLayout.findViewById<TextView>(R.id.cardview_text).text = text
+        }
+
+        fun setCardBackground(id: Int) {
+            linearLayout.findViewById<CardView>(R.id.cardview).setBackgroundResource(id)
+        }
+
+        fun alignToTheEnd() {
+            linearLayout.findViewById<LinearLayout>(R.id.ll_cardview).gravity = Gravity.END
         }
 
     }
