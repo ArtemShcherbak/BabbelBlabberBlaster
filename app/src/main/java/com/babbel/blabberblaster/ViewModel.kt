@@ -15,7 +15,7 @@ class ViewModel : ViewModel() {
 
     @SuppressLint("CheckResult")
     fun sendMessage(content: String) {
-        Single.just(listOf("Hello, I'm not working yet", "Sure, sounds good!", "Totally agree").random())
+        Single.just(listOf("Hola, todavía no estoy trabajando", "¡Claro, suena bien!", "Totalmente de acuerdo").random())
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .delay(1000, TimeUnit.MILLISECONDS)

@@ -25,7 +25,7 @@ class MainActivity : AppCompatActivity(), ViewCallback {
 
         textToSpeech = TextToSpeech(this, TextToSpeech.OnInitListener {status ->
             if(status != TextToSpeech.ERROR) {
-                textToSpeech.language = Locale.UK
+                textToSpeech.language = Locale("es", "ES")
             }
         })
 
@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity(), ViewCallback {
         microphone.setOnClickListener {
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.ENGLISH)
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale("es", "ES"))
             startActivityForResult(intent, 42)
         }
 
