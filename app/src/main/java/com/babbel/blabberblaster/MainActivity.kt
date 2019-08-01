@@ -1,12 +1,19 @@
 package com.babbel.blabberblaster
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Bundle
+import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.babbel.blabberblaster.model.Message
 import kotlinx.android.synthetic.main.activity_main.*
@@ -19,6 +26,34 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var viewModel: ViewModel
     private lateinit var textToSpeech: TextToSpeech
+    private lateinit var speechRecognizer: SpeechRecognizer
+    private val recognitionListener = object: RecognitionListener {
+        override fun onReadyForSpeech(p0: Bundle?) {}
+
+        override fun onRmsChanged(p0: Float) {}
+
+        override fun onBufferReceived(p0: ByteArray?) {}
+
+        override fun onPartialResults(p0: Bundle?) {}
+
+        override fun onEvent(p0: Int, p1: Bundle?) {}
+
+        override fun onBeginningOfSpeech() {}
+
+        override fun onEndOfSpeech() {}
+
+        override fun onError(p0: Int) {
+            microphone.setColorFilter(Color.BLACK)
+        }
+
+        override fun onResults(data: Bundle?) {
+            microphone.setColorFilter(Color.BLACK)
+            data?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.let {
+                sendMessage(it[0])
+            }
+        }
+
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,6 +67,9 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
+        speechRecognizer.setRecognitionListener(recognitionListener)
+
         recycler_view.apply {
             setHasFixedSize(true)
             layoutManager = LinearLayoutManager(this@MainActivity)
@@ -42,10 +80,11 @@ class MainActivity : AppCompatActivity() {
         }
 
         microphone.setOnClickListener {
+            microphone.setColorFilter(Color.RED)
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale("es", "ES"))
-            startActivityForResult(intent, 42)
+            speechRecognizer.startListening(intent)
         }
 
         send.setOnClickListener {
@@ -61,22 +100,39 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("CheckResult")
     override fun onStart() {
         super.onStart()
-        viewModel.getGreeting()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({
-                onMessageReceived(it.text)
-            }, {
-                Toast.makeText(this, "An error occured", Toast.LENGTH_LONG).show()
-            })
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 42)
+        } else{
+            viewModel.getGreeting()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    onMessageReceived(it.text)
+                }, {
+                    Toast.makeText(this, "An error occured", Toast.LENGTH_LONG).show()
+                })
+        }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (resultCode == RESULT_OK && data != null && requestCode == 42) {
-            val results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            sendMessage(results[0])
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            42 -> {
+                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    viewModel.getGreeting()
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe({
+                            onMessageReceived(it.text)
+                        }, {
+                            Toast.makeText(this, it.message, Toast.LENGTH_LONG).show()
+                        })
+                } else {
+                    finish()
+                }
+                return
+            }
         }
     }
 
@@ -90,12 +146,13 @@ class MainActivity : AppCompatActivity() {
             .subscribe({
                 onMessageReceived(it.text)
             }, {
-                Toast.makeText(this, "An error occured", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, it.message, Toast.LENGTH_LONG).show()
             })
     }
 
     private fun onMessageReceived(content: String) {
         recycler_view.post {
+            viewModel.messageHistoryAdapter?.addMessage(Message(content, true))
             (viewModel.messageHistoryAdapter?.itemCount)?.let { recycler_view.scrollToPosition(it - 1) }
             textToSpeech.speak(content, TextToSpeech.QUEUE_FLUSH, null)
         }
