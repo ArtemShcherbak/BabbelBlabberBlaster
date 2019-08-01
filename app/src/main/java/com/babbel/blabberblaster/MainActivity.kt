@@ -37,8 +37,6 @@ class MainActivity : AppCompatActivity() {
             layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = viewModel.messageHistoryAdapter
                 ?: MessageHistoryAdapter().apply {
-                    addMessage(Message("hello", true))
-                    addMessage(Message("bye", false))
                     viewModel.messageHistoryAdapter = this
                 }
         }
