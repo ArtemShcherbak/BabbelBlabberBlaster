@@ -1,15 +1,19 @@
 package com.babbel.blabberblaster
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.babbel.blabberblaster.model.Message
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 import androidx.lifecycle.ViewModelProviders
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 
 class MainActivity : AppCompatActivity(), ViewCallback {
 
@@ -55,6 +59,19 @@ class MainActivity : AppCompatActivity(), ViewCallback {
                 }
             }
         }
+    }
+
+    @SuppressLint("CheckResult")
+    override fun onStart() {
+        super.onStart()
+        viewModel.getGreeting()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                onMessageReceived(it.text)
+            }, {
+                Toast.makeText(this, "An error occured", Toast.LENGTH_LONG).show()
+            })
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
