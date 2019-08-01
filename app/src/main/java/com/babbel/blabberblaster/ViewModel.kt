@@ -1,16 +1,11 @@
 package com.babbel.blabberblaster
 
-import android.annotation.SuppressLint
 import androidx.lifecycle.ViewModel
-import com.babbel.blabberblaster.model.Message
 import com.google.gson.Gson
 import io.reactivex.Observable
-import io.reactivex.Single
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
-import java.util.concurrent.TimeUnit
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 
 
 class ViewModel : ViewModel() {
@@ -20,33 +15,29 @@ class ViewModel : ViewModel() {
     val JSON = "application/json; charset=utf-8".toMediaType()
     val gson = Gson()
 
-
-    var viewCallback: ViewCallback? = null
     var messageHistoryAdapter: MessageHistoryAdapter? = null
 
-    @SuppressLint("CheckResult")
-    fun sendMessage(content: String) {
-        Single.just(
-            listOf(
-                "Hola, todavía no estoy trabajando",
-                "¡Claro, suena bien!",
-                "Totalmente de acuerdo"
-            ).random()
-        )
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .delay(1000, TimeUnit.MILLISECONDS)
-            .subscribe { response: String ->
-                messageHistoryAdapter?.addMessage(Message(response, true))
-                viewCallback?.onMessageReceived(response)
-            }
-    }
+//    @SuppressLint("CheckResult")
+//    fun sendMessage(content: String) {
+//        Single.just(
+//            listOf(
+//                "Hola, todavía no estoy trabajando",
+//                "¡Claro, suena bien!",
+//                "Totalmente de acuerdo"
+//            ).random()
+//        )
+//            .subscribeOn(Schedulers.io())
+//            .observeOn(AndroidSchedulers.mainThread())
+//            .delay(1000, TimeUnit.MILLISECONDS)
+//            .subscribe { response: String ->
+//                messageHistoryAdapter?.addMessage(Message(response, true))
+//                viewCallback?.onMessageReceived(response)
+//            }
+//    }
 
     fun getGreeting(): Observable<StartResponse> {
-        val body = RequestBody.create(JSON, "")
         val request = Request.Builder()
             .url("$Url/start")
-            .post(body)
             .build()
 
         return Observable.fromCallable {
@@ -54,8 +45,27 @@ class ViewModel : ViewModel() {
         }
     }
 
+    fun sendMessage(content: String): Observable<SendMessageResponse> {
+        val body = gson.toJson(SendMessageRequest(content)).toRequestBody(JSON)
+        val request = Request.Builder()
+            .url("$Url/send")
+            .post(body)
+            .build()
+
+        return Observable.fromCallable {
+            gson.fromJson(okHttpClient.newCall(request).execute().body?.string(), SendMessageResponse::class.java)
+        }
+    }
 }
 
 data class StartResponse(
+    val text: String
+)
+
+data class SendMessageRequest(
+    val text: String
+)
+
+data class SendMessageResponse(
     val text: String
 )

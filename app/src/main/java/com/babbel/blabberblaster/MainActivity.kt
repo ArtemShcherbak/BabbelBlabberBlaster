@@ -15,7 +15,7 @@ import androidx.lifecycle.ViewModelProviders
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 
-class MainActivity : AppCompatActivity(), ViewCallback {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var viewModel: ViewModel
     private lateinit var textToSpeech: TextToSpeech
@@ -25,7 +25,6 @@ class MainActivity : AppCompatActivity(), ViewCallback {
         setContentView(R.layout.activity_main)
 
         viewModel = ViewModelProviders.of(this)[ViewModel::class.java]
-        viewModel.viewCallback = this
 
         textToSpeech = TextToSpeech(this, TextToSpeech.OnInitListener {status ->
             if(status != TextToSpeech.ERROR) {
@@ -83,13 +82,21 @@ class MainActivity : AppCompatActivity(), ViewCallback {
         }
     }
 
+    @SuppressLint("CheckResult")
     private fun sendMessage(content: String) {
         viewModel.messageHistoryAdapter?.addMessage(Message(content, false))
-        viewModel.sendMessage(content)
         (viewModel.messageHistoryAdapter?.itemCount)?.let { recycler_view.scrollToPosition(it - 1) }
+        viewModel.sendMessage(content)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                onMessageReceived(it.text)
+            }, {
+                Toast.makeText(this, "An error occured", Toast.LENGTH_LONG).show()
+            })
     }
 
-    override fun onMessageReceived(content: String) {
+    private fun onMessageReceived(content: String) {
         recycler_view.post {
             (viewModel.messageHistoryAdapter?.itemCount)?.let { recycler_view.scrollToPosition(it - 1) }
             textToSpeech.speak(content, TextToSpeech.QUEUE_FLUSH, null)
@@ -101,8 +108,4 @@ class MainActivity : AppCompatActivity(), ViewCallback {
         textToSpeech.stop()
         textToSpeech.shutdown()
     }
-}
-
-interface ViewCallback {
-    fun onMessageReceived(content: String)
 }
