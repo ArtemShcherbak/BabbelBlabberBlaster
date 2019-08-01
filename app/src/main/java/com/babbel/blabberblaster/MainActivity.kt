@@ -14,25 +14,27 @@ import java.util.*
 import android.widget.Toast
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
-
-
+import androidx.lifecycle.ViewModelProviders
 
 class MainActivity : AppCompatActivity() {
 
-    private var messageHistoryAdapter: MessageHistoryAdapter? = null
+    private lateinit var viewModel: ViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        viewModel = ViewModelProviders.of(this)[ViewModel::class.java]
+
         recycler_view.apply {
             setHasFixedSize(true)
             layoutManager = LinearLayoutManager(this@MainActivity)
-            adapter = MessageHistoryAdapter().apply {
-                addMessage(Message("hello", true))
-                addMessage(Message("bye", false))
-                messageHistoryAdapter = this
-            }
+            adapter = viewModel.messageHistoryAdapter
+                ?: MessageHistoryAdapter().apply {
+                    addMessage(Message("hello", true))
+                    addMessage(Message("bye", false))
+                    viewModel.messageHistoryAdapter = this
+                }
         }
 
         microphone.setOnClickListener {
@@ -45,7 +47,7 @@ class MainActivity : AppCompatActivity() {
         send.setOnClickListener {
             editText?.text?.let {
                 if (it.isNotEmpty()) {
-                    messageHistoryAdapter?.addMessage(Message(it.toString(), false))
+                    viewModel.messageHistoryAdapter?.addMessage(Message(it.toString(), false))
                     it.clear()
                 }
             }
@@ -57,7 +59,7 @@ class MainActivity : AppCompatActivity() {
 
         if (resultCode == RESULT_OK && data != null && requestCode == 42) {
             val results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            messageHistoryAdapter?.addMessage(Message(results[0], false))
+            viewModel.messageHistoryAdapter?.addMessage(Message(results[0], false))
         }
     }
 }
