@@ -24,6 +24,7 @@ class MessageHistoryAdapter : RecyclerView.Adapter<MessageHistoryAdapter.Message
         with(messageHistory[position]) {
             if (isIncoming) {
                 holder.setCardBackground(R.drawable.message_card_background_incoming)
+                holder.alignToTheStart()
             } else {
                 holder.setCardBackground(R.drawable.message_card_background_outcoming)
                 holder.alignToTheEnd()
@@ -47,10 +48,13 @@ class MessageHistoryAdapter : RecyclerView.Adapter<MessageHistoryAdapter.Message
             linearLayout.findViewById<CardView>(R.id.cardview).setBackgroundResource(id)
         }
 
+        fun alignToTheStart() {
+            linearLayout.findViewById<LinearLayout>(R.id.ll_cardview).gravity = Gravity.START
+        }
+
         fun alignToTheEnd() {
             linearLayout.findViewById<LinearLayout>(R.id.ll_cardview).gravity = Gravity.END
         }
-
     }
 
 }

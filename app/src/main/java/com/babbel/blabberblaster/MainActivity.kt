@@ -15,8 +15,9 @@ import android.widget.Toast
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.RecyclerView
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), ViewCallback {
 
     private lateinit var viewModel: ViewModel
 
@@ -25,6 +26,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         viewModel = ViewModelProviders.of(this)[ViewModel::class.java]
+        viewModel.viewCallback = this
 
         recycler_view.apply {
             setHasFixedSize(true)
@@ -66,6 +68,16 @@ class MainActivity : AppCompatActivity() {
     private fun sendMessage(content: String) {
         viewModel.messageHistoryAdapter?.addMessage(Message(content, false))
         viewModel.sendMessage(content)
+        scrollToLastMessage()
+    }
+
+    override fun scrollToLastMessage() {
+        recycler_view.post {
+            (viewModel.messageHistoryAdapter?.itemCount)?.let { recycler_view.scrollToPosition(it - 1) }
+        }
     }
 }
 
+interface ViewCallback {
+    fun scrollToLastMessage()
+}

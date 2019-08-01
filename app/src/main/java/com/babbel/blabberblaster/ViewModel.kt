@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit
 
 class ViewModel : ViewModel() {
 
+    var viewCallback: ViewCallback? = null
     var messageHistoryAdapter: MessageHistoryAdapter? = null
 
     @SuppressLint("CheckResult")
@@ -20,6 +21,7 @@ class ViewModel : ViewModel() {
             .delay(1000, TimeUnit.MILLISECONDS)
             .subscribe { response: String ->
                 messageHistoryAdapter?.addMessage(Message(response, true))
+                viewCallback?.scrollToLastMessage()
             }
     }
 
