@@ -3,23 +3,18 @@ package com.babbel.blabberblaster
 import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognizerIntent
-import android.text.Editable
-import android.text.TextWatcher
-import android.view.KeyEvent
+import android.speech.tts.TextToSpeech
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.babbel.blabberblaster.model.Message
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
-import android.widget.Toast
-import android.view.inputmethod.EditorInfo
-import android.widget.TextView
 import androidx.lifecycle.ViewModelProviders
-import androidx.recyclerview.widget.RecyclerView
 
 class MainActivity : AppCompatActivity(), ViewCallback {
 
     private lateinit var viewModel: ViewModel
+    private lateinit var textToSpeech: TextToSpeech
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +22,12 @@ class MainActivity : AppCompatActivity(), ViewCallback {
 
         viewModel = ViewModelProviders.of(this)[ViewModel::class.java]
         viewModel.viewCallback = this
+
+        textToSpeech = TextToSpeech(this, TextToSpeech.OnInitListener {status ->
+            if(status != TextToSpeech.ERROR) {
+                textToSpeech.language = Locale.UK
+            }
+        })
 
         recycler_view.apply {
             setHasFixedSize(true)
@@ -68,16 +69,23 @@ class MainActivity : AppCompatActivity(), ViewCallback {
     private fun sendMessage(content: String) {
         viewModel.messageHistoryAdapter?.addMessage(Message(content, false))
         viewModel.sendMessage(content)
-        scrollToLastMessage()
+        (viewModel.messageHistoryAdapter?.itemCount)?.let { recycler_view.scrollToPosition(it - 1) }
     }
 
-    override fun scrollToLastMessage() {
+    override fun onMessageReceived(content: String) {
         recycler_view.post {
             (viewModel.messageHistoryAdapter?.itemCount)?.let { recycler_view.scrollToPosition(it - 1) }
+            textToSpeech.speak(content, TextToSpeech.QUEUE_FLUSH, null)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        textToSpeech.stop()
+        textToSpeech.shutdown()
     }
 }
 
 interface ViewCallback {
-    fun scrollToLastMessage()
+    fun onMessageReceived(content: String)
 }

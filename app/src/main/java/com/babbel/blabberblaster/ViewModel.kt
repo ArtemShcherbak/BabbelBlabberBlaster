@@ -15,13 +15,13 @@ class ViewModel : ViewModel() {
 
     @SuppressLint("CheckResult")
     fun sendMessage(content: String) {
-        Single.just("Hello")
+        Single.just(listOf("Hello, I'm not working yet", "Sure, sounds good!", "Totally agree").random())
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .delay(1000, TimeUnit.MILLISECONDS)
             .subscribe { response: String ->
                 messageHistoryAdapter?.addMessage(Message(response, true))
-                viewCallback?.scrollToLastMessage()
+                viewCallback?.onMessageReceived(response)
             }
     }
 
